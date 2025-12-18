@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PulseAnime</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0a;
+      overflow: hidden;
+      user-select: none;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    /* Global canvas style sets absolute positioning for the main sketches */
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    /* Custom Scrollbar for UI */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #444;
+    }
+
+    .scanline {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02));
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* --- MINIMALIST SLIDER STYLES --- */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      /* Handled by JS gradient */
+      height: 2px;
+      /* Thin track */
+      cursor: pointer;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    input[type=range]:focus {
+      outline: none;
+    }
+
+    /* The Track (Background) - handled by inline style, but base setup here */
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 2px;
+      cursor: pointer;
+      border-radius: 0px;
+    }
+
+    /* The Thumb */
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      /* HIT AREA: 32px total (12px visual + 10px transparent border on each side) */
+      height: 32px;
+      width: 32px;
+
+      /* Visual Core */
+      background: #ffffff;
+      background-clip: content-box;
+      /* Restricts white bg to the center 12px */
+
+      /* Invisible Hit Area */
+      border: 10px solid transparent;
+      border-radius: 0;
+
+      /* Visual Border (mimics original 1px solid #000) */
+      box-shadow: inset 0 0 0 1px #000;
+
+      /* Centering: (32px thumb - 2px track) / 2 * -1 = -15px */
+      margin-top: -15px;
+
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: #ffffff;
+    }
+
+    /* --- COLOR INPUT --- */
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      border: none;
+      width: 100%;
+      height: 24px;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 0;
+    }
+
+    /* Spectrum Canvas Specifics */
+    #spectrum-viz {
+      position: static;
+      image-rendering: pixelated;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "p5": "https://esm.sh/p5@1.9.0"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- CRT Overlay -->
+  <div class="scanline absolute inset-0 z-30 opacity-20"></div>
+
+  <!-- About Modal -->
+  <div id="about-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur hidden">
+    <div class="bg-[#0a0a0a] border border-white/20 p-8 max-w-2xl w-full m-4 shadow-2xl text-gray-300 relative">
+      <button id="close-about" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+      <h2 class="text-3xl font-bold text-white mb-1 tracking-tighter">PULSE<span class="text-gray-400">ANIME</span></h2>
+      <div class="text-xs uppercase tracking-widest text-gray-500 mb-6" data-i18n="modal_subtitle">Interactive Art
+        Solution</div>
+
+      <div class="grid grid-cols-2 gap-8 text-sm">
+        <div>
+          <h3 class="text-white font-bold uppercase mb-2 border-b border-white/10 pb-1" data-i18n="modal_team">Team</h3>
+          <ul class="space-y-1">
+            <li>Maxime Lacombe</li>
+            <li>Jules Milard</li>
+            <li>Victor Verdier-Font</li>
+          </ul>
+
+          <h3 class="text-white font-bold uppercase mt-6 mb-2 border-b border-white/10 pb-1" data-i18n="modal_stack">
+            Tech Stack</h3>
+          <p>p5.js, Web Audio API, GLSL Shaders, WebGL</p>
+        </div>
+
+        <div>
+          <h3 class="text-white font-bold uppercase mb-2 border-b border-white/10 pb-1" data-i18n="modal_context">
+            Context</h3>
+          <p class="mb-2" data-i18n="modal_context_desc">Creating an immersive synesthetic experience reacting in
+            real-time to sound frequencies.</p>
+
+          <h3 class="text-white font-bold uppercase mt-4 mb-2 border-b border-white/10 pb-1"
+            data-i18n="modal_objectives">Objectives</h3>
+          <ul class="list-disc list-inside text-gray-400 text-xs space-y-1">
+            <li data-i18n="modal_obj_1">Real-time Audio Analysis (FFT)</li>
+            <li data-i18n="modal_obj_2">High-perf GPU Visualization</li>
+            <li data-i18n="modal_obj_3">User Interactivity</li>
+            <li data-i18n="modal_obj_4">Modular Architecture</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-8 text-xs text-gray-500 pt-4 border-t border-white/10 flex justify-between items-center">
+        <span data-i18n="modal_footer">Supervisors: Andréa Bareggi & Lamine Amour • ESME Sudria 2025</span>
+        <button id="restart-tutorial"
+          class="text-white bg-white/10 hover:bg-white hover:text-black border border-white/20 px-3 py-1 rounded transition-all text-[10px] uppercase font-bold tracking-widest"
+          data-i18n="tut_restart">
+          Restart Tutorial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Sidebar (Left) -->
+  <div id="settings-panel"
+    class="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur border-r border-white/10 z-40 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-[5px_0_30px_rgba(0,0,0,0.8)]">
+    <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+      <h2 class="text-white font-bold uppercase tracking-widest text-sm" data-i18n="settings_title">CONFIGURATION</h2>
+      <button id="close-settings"
+        class="text-gray-400 hover:text-white transition-colors hover:rotate-90 duration-300">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-white/10">
+      <button id="tab-params"
+        class="flex-1 py-3 text-[10px] tracking-widest font-bold text-white bg-white/5 border-b-2 border-white"
+        data-i18n="tab_control">CONTROL</button>
+      <button id="tab-presets"
+        class="flex-1 py-3 text-[10px] tracking-widest font-bold text-gray-500 hover:bg-white/5 border-b-2 border-transparent"
+        data-i18n="tab_presets">PRESETS</button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar" id="settings-content">
+      <!-- Dynamic Controls injected here -->
+    </div>
+
+    <!-- Presets Content (Hidden by default) -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-4 hidden custom-scrollbar" id="presets-content">
+      <div class="flex gap-2">
+        <input type="text" id="preset-name" placeholder="PRESET NAME..."
+          class="bg-black border border-white/20 text-white text-xs p-2 flex-1 outline-none focus:border-white font-mono uppercase placeholder-gray-600"
+          data-i18n-placeholder="preset_placeholder">
+        <button id="save-preset"
+          class="px-3 bg-white/10 text-white border border-white/30 text-xs font-bold hover:bg-white hover:text-black transition-colors"
+          data-i18n="btn_save">SAVE</button>
+      </div>
+      <div id="presets-list" class="space-y-2">
+        <!-- List injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main UI Layer -->
+  <div id="ui-layer"
+    class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-4 transition-opacity duration-300">
+
+    <!-- Header -->
+    <div class="pointer-events-auto flex justify-between items-start w-full">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-widest uppercase">
+          PULSE<span class="text-gray-400">ANIME</span>
+        </h1>
+        <div class="text-[9px] text-gray-500 mt-1 tracking-[0.2em] uppercase" data-i18n="app_subtitle">Audio
+          Reactive Experience</div>
+      </div>
+
+      <!-- Top Right Controls -->
+      <div class="flex flex-col gap-2 items-end">
+
+        <div class="flex gap-2 mb-2">
+          <button id="btn-about"
+            class="w-8 h-8 flex items-center justify-center border border-white/20 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            title="About">
+            ?
+          </button>
+
+          <!-- Language Toggle -->
+          <button id="lang-toggle"
+            class="w-8 h-8 flex items-center justify-center border border-white/20 text-white font-mono text-xs hover:bg-white hover:text-black transition-colors bg-black/50 backdrop-blur">
+            FR
+          </button>
+
+          <label
+            class="cursor-pointer px-3 py-1 border border-white/20 text-white text-xs font-mono uppercase hover:bg-white hover:text-black transition-colors bg-black/50 backdrop-blur h-8 flex items-center">
+            <span data-i18n="btn_audio">📁 AUDIO</span>
+            <input type="file" id="audio-upload" accept="audio/*">
+          </label>
+          <div id="bg-upload-container" class="hidden items-center gap-1">
+            <label
+              class="cursor-pointer px-3 py-1 border border-white/20 text-white text-xs font-mono uppercase hover:bg-white hover:text-black transition-colors bg-black/50 backdrop-blur h-8 flex items-center">
+              <span data-i18n="btn_bg">🖼️ BG</span>
+              <input type="file" id="bg-upload" accept="image/*">
+            </label>
+            <button id="remove-bg-btn"
+              class="hidden h-8 w-8 items-center justify-center border border-white/20 text-red-500 hover:text-white hover:bg-red-900/50 transition-colors bg-black/50 backdrop-blur"
+              title="Remove Image">
+              ✕
+            </button>
+          </div>
+
+        </div>
+
+        <div id="audio-controls"
+          class="flex flex-col gap-2 hidden bg-black/80 p-3 border border-white/20 rounded backdrop-blur w-64">
+          <div class="flex gap-2 items-center justify-between">
+            <div class="flex gap-2">
+              <button id="play-audio"
+                class="px-3 py-1 bg-white text-black text-xs font-bold font-mono uppercase hover:bg-gray-200"
+                data-i18n="btn_play">PLAY</button>
+              <button id="stop-audio"
+                class="px-3 py-1 bg-gray-700 text-white text-xs font-bold font-mono uppercase hover:bg-gray-600"
+                data-i18n="btn_stop">STOP</button>
+              <button id="close-audio"
+                class="px-2 py-1 bg-red-900/50 text-red-500 border border-red-500/30 text-xs font-bold font-mono hover:bg-red-900 hover:text-white transition-colors"
+                title="Close Player">✕</button>
+            </div>
+            <span id="audio-time" class="text-[10px] font-mono text-white">00:00 / 00:00</span>
+          </div>
+          <input type="range" id="audio-progress" min="0" max="100" value="0" step="0.1"
+            class="w-full h-1 cursor-pointer">
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Info -->
+    <footer style="
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        font-size: 11px;
+        color: #888;
+        opacity: 0.5;
+        z-index: 100;
+        text-align: left;
+        pointer-events: none;
+      ">
+      <div><strong>PulseAnime</strong> v2.1</div>
+      <div>ESME Sudria - Ingénieur 3 (2025/2026)</div>
+    </footer>
+
+    <!-- Bottom Right Controls -->
+    <div class="pointer-events-auto absolute bottom-4 right-4 w-full max-w-[380px] flex flex-col items-end gap-3">
+
+      <!-- Sketch Selection -->
+      <div id="sketch-controls" class="flex flex-wrap gap-1.5 justify-end">
+        <!-- Buttons generated by JS -->
+      </div>
+
+      <!-- Main Control Panel -->
+      <div
+        class="bg-black/80 border border-white/10 backdrop-blur-md p-3 w-full flex flex-col gap-3 shadow-2xl rounded-sm">
+
+        <!-- 1. Global Sensitivity Slider (Top) -->
+        <div id="sens-container" class="flex flex-col gap-1">
+          <div class="flex justify-between text-[9px] text-gray-400 uppercase font-bold font-mono tracking-widest">
+            <span data-i18n="sens_label">Sensitivity</span>
+            <span id="sens-val" class="text-white">1.0</span>
+          </div>
+          <input type="range" id="sensitivity-slider" min="0.1" max="3.0" step="0.1" value="1.0" class="w-full"
+            style="background: linear-gradient(to right, #ffffff 33%, #333333 33%);">
+        </div>
+
+        <!-- 2. Mic & Spectrum Viz (Middle) -->
+        <div class="flex items-center gap-2 w-full h-6">
+          <button id="mic-btn"
+            class="h-full px-3 bg-white/5 text-white border border-white/10 hover:bg-white hover:text-black transition-all uppercase text-[9px] font-bold tracking-widest whitespace-nowrap flex items-center justify-center shrink-0"
+            data-i18n="mic_off">
+            MIC OFF
+          </button>
+
+          <canvas id="spectrum-viz" class="flex-1 w-full h-full bg-black/40 border border-white/5 min-w-0"></canvas>
+
+        </div>
+
+        <!-- 3. Shortcuts Display (Bottom) -->
+        <div id="shortcuts-area" class="flex justify-between items-center border-t border-white/5 pt-2 mt-1">
+          <div class="text-[9px] text-gray-500 font-mono uppercase tracking-tight" data-i18n="shortcuts">
+            [←/→] NAVIGATE • [SPACE] PAUSE • [H] UI • [R] CONFIG • [D] DEBUG
+          </div>
+          <div class="text-[9px] text-gray-600 font-mono" id="fps-counter">60 FPS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Point -->
+  <script type="module" src="/src/index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

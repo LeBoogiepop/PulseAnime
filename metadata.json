@@ -1,0 +1,7 @@
+{
+  "name": "PulseAnime - GPU Generative Art",
+  "description": "High-performance, audio-reactive generative art visualizer using WebGL shaders and p5.js.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
