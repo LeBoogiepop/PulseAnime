@@ -76,9 +76,6 @@ const sketch = (p: p5) => {
   }
 
   p.keyPressed = () => {
-    if (p.key === 'd' || p.key === 'D') {
-      audioDebug.toggle();
-    }
     if (sketchManager.p5Instance) sketchManager.handleKeyPressed(sketchManager.p5Instance, p.key);
   };
 };
