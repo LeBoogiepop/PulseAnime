@@ -76,9 +76,9 @@ export class TutorialManager {
             titleKey: 'tut_step5_title',
             messageKey: 'tut_step5_msg',
             position: 'top',
-            highlightOffset: { x: -8, y: -8, w: 16, h: 16 },
-            tooltipOffset: { x: 0, y: -7 },
-            tooltipWidth: 377
+            highlightOffset: { x: -7, y: 5, w: -40, h: 0 },
+            tooltipOffset: { x: -26, y: -41 },
+            tooltipWidth: 338
         },
         {
             id: 6,
@@ -330,7 +330,7 @@ export class TutorialManager {
                 ${this.currentStep > 0 && this.currentStep < this.steps.length - 1 ? `<div class="text-[10px] uppercase tracking-widest text-white/40 font-bold font-mono">${t('tut_step')} ${this.currentStep}/6</div>` : ''}
                 <h3 class="text-xl font-bold tracking-tight uppercase font-mono">${t(step.titleKey)}</h3>
             </div>
-            <p class="text-sm text-gray-300 leading-relaxed font-sans">${t(step.messageKey)}</p>
+            <p class="text-sm text-gray-300 leading-relaxed font-sans whitespace-pre-line">${t(step.messageKey)}</p>
             <div class="flex gap-2 justify-between mt-4">
                 <div class="flex gap-2">
                     ${this.currentStep > 0 ? `<button id="tut-prev" class="px-4 py-1.5 text-[10px] font-bold uppercase border border-white/20 text-gray-400 hover:text-white hover:bg-white/10 transition-colors rounded font-mono">${t('tut_prev')}</button>` : ''}

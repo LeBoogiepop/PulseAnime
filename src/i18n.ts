@@ -217,7 +217,7 @@ export const translations = {
     "tut_step4_msg": "Adjust sensitivity to control visualization reactivity",
 
     "tut_step5_title": "Keyboard Shortcuts",
-    "tut_step5_msg": "Use keyboard shortcuts for quick navigation: [←/→] : navigate between scenes • [SPACE] : pause • [H] : hide the ui • [R] : configuration panel • [D] : fft shower",
+    "tut_step5_msg": "Use keyboard shortcuts for quick navigation:\n[←/→] : navigate between scenes\n[SPACE] : pause\n[H] : hide the ui\n[R] : configuration panel\n[D] : FFT Visualizer",
 
     "tut_step6_title": "Language Change",
     "tut_step6_msg": "Switch interface language (French/English available)",
@@ -436,7 +436,7 @@ export const translations = {
     "tut_step4_msg": "Ajustez la sensibilité pour contrôler la réactivité de la visualisation",
 
     "tut_step5_title": "Raccourcis Clavier",
-    "tut_step5_msg": "Utilisez les raccourcis clavier pour naviguer : [←/→] NAVIGUER • [ESPACE] PAUSE • [H] UI • [R] CONFIG • [D] DEBUG",
+    "tut_step5_msg": "Utilisez les raccourcis clavier pour naviguer :\n[←/→] : naviguer entre les scènes\n[ESPACE] : pause\n[H] : masquer l'interface\n[R] : panneau de configuration\n[D] : Visualiseur FFT",
 
     "tut_step6_title": "Changement de Langue",
     "tut_step6_msg": "Changez la langue de l'interface (Français/Anglais disponible)",
