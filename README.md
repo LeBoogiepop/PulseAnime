@@ -1,9 +1,10 @@
 # PulseAnime – Solution d’art interactif
 
-<div align="center">
-  <!-- Capture d'écran principale (remplacée par ton image) -->
-  <img src="./image/pulseanime-demo-main.png" alt="Capture d'écran de l'écran principal PulseAnime" width="900" />
-</div>
+<p align="center">
+  <img src="image/README/1772632551530.png" alt="Aperçu de l'écran principal de PulseAnime" width="900" />
+  <br />
+  <em>Vue de l'écran principal avec le panneau de contrôle et la visualisation audio-réactive.</em>
+</p>
 
 <div align="center">
   <br/>
