@@ -140,6 +140,24 @@ export class SketchManager {
         // Do NOT call setup() here, as it resets the animation state (User Request)
     }
 
+    goToNextSketch(containerId: string) {
+        if (this.currentSketchIndex === -1) {
+            this.switchSketch(0, containerId);
+        } else {
+            const nextIdx = (this.currentSketchIndex + 1) % this.availableSketches.length;
+            this.switchSketch(nextIdx, containerId);
+        }
+    }
+
+    goToPreviousSketch(containerId: string) {
+        if (this.currentSketchIndex === -1) {
+            this.switchSketch(this.availableSketches.length - 1, containerId);
+        } else {
+            const prevIdx = (this.currentSketchIndex - 1 + this.availableSketches.length) % this.availableSketches.length;
+            this.switchSketch(prevIdx, containerId);
+        }
+    }
+
     handleKeyPressed(p: p5, key: string) {
         if (this.currentSketch.keyPressed) this.currentSketch.keyPressed(p, key);
     }

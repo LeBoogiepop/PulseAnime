@@ -196,7 +196,7 @@ export class LandingPage implements Sketch {
   audioReactivity = 'La sphère centrale pulse en rythme avec les basses fréquences.';
 
   params: SketchParams = {
-    sphereSize: { type: 'slider', value: 150, min: 50, max: 300, step: 10, name: 'Taille Sphère' },
+    sphereSize: { type: 'slider', value: 110, min: 50, max: 300, step: 10, name: 'Taille Sphère' },
     rotationSpeed: { type: 'slider', value: 0.01, min: 0.0, max: 0.05, step: 0.001, name: 'Vitesse Rotation' },
     rotationX: { type: 'slider', value: 1.0, min: 0, max: 1, step: 1, name: 'Axe X' },
     rotationY: { type: 'slider', value: 1.0, min: 0, max: 1, step: 1, name: 'Axe Y' },
@@ -210,9 +210,9 @@ export class LandingPage implements Sketch {
 
   setup(p: p5) {
     // Create a 2D graphics buffer for text
-    this.textLayer = p.createGraphics(1000, 100);
+    this.textLayer = p.createGraphics(720, 72);
     this.textLayer.textAlign(p.CENTER, p.CENTER);
-    this.textLayer.textSize(24); // Higher resolution for texture
+    this.textLayer.textSize(18); // Plus compact pour tenir sur une ligne
     this.textLayer.textStyle(p.BOLD);
     this.textLayer.textFont('Courier New');
   }
@@ -230,13 +230,15 @@ export class LandingPage implements Sketch {
       p.background(10);
     }
 
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     // --- SPHÈRE 3D ---
     p.push();
     p.noFill();
     p.stroke(255);
     p.strokeWeight(1);
 
-    // 1. Rotation continue (Mouvement)
+    // 1. Position de base (puis rotation autour de son propre centre)
     const rotSpd = this.params.rotationSpeed.value;
     const rx = this.params.rotationX.value;
     const ry = this.params.rotationY.value;
@@ -244,13 +246,17 @@ export class LandingPage implements Sketch {
     const det = this.params.detailLevel.value;
     const col = this.params.sphereColor.value;
 
+    const yOffset = isMobile ? -80 : -40;
+    p.translate(0, yOffset, 0);
+
+    // 2. Rotation continue (autour du centre déjà positionné)
     if (rx > 0.5) p.rotateX(p.frameCount * rotSpd);
     if (ry > 0.5) p.rotateY(p.frameCount * rotSpd);
     if (rz > 0.5) p.rotateZ(p.frameCount * rotSpd);
 
-    // 2. Pulsation Audio (Taille)
-    const baseSize = this.params.sphereSize.value;
-    const pulse = this.params.pulseAmount.value;
+    // 3. Pulsation Audio (Taille)
+    const baseSize = this.params.sphereSize.value * (isMobile ? 0.9 : 1.0);
+    const pulse = this.params.pulseAmount.value * (isMobile ? 0.7 : 1.0);
     const r = baseSize + audio.bass * pulse;
 
     p.stroke(col);
@@ -269,8 +275,13 @@ export class LandingPage implements Sketch {
     // Le texte monte et descend doucement
     const yOff = Math.sin(p.frameCount * 0.05) * 5;
 
-    // Position du texte (0 en X, 180px plus bas + vague en Y)
-    p.translate(0, 200 + yOff, 0);
+    if (isMobile) {
+      // Sur mobile, place le titre au-dessus de la sphère (légèrement plus haut)
+      p.translate(0, -230 + yOff, 0);
+    } else {
+      // Desktop : sous la sphère comme avant
+      p.translate(0, 180 + yOff, 0);
+    }
 
     // Update Text Layer (in case of language change)
     if (this.textLayer) {
@@ -281,6 +292,10 @@ export class LandingPage implements Sketch {
 
       // Draw the text layer as a texture/image
       p.imageMode(p.CENTER);
+      if (isMobile) {
+        // Réduit légèrement la taille perçue du texte sur mobile
+        p.scale(0.8);
+      }
       p.image(this.textLayer, 0, 0);
     }
 

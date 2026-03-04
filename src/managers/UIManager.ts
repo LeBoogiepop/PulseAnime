@@ -32,6 +32,17 @@ export class UIManager {
     audioProgress = document.getElementById('audio-progress') as HTMLInputElement;
     audioTime = document.getElementById('audio-time') as HTMLSpanElement;
 
+    // Mobile controls
+    mobilePrevBtn = document.getElementById('mobile-prev') as HTMLButtonElement;
+    mobileNextBtn = document.getElementById('mobile-next') as HTMLButtonElement;
+    mobilePlayPauseBtn = document.getElementById('mobile-play-pause') as HTMLButtonElement;
+    mobileToggleUiBtn = document.getElementById('mobile-toggle-ui') as HTMLButtonElement;
+    mobileConfigBtn = document.getElementById('mobile-config') as HTMLButtonElement;
+    mobileDebugBtn = document.getElementById('mobile-debug') as HTMLButtonElement;
+
+    // UI restore handle
+    uiRestoreBtn = document.getElementById('ui-restore') as HTMLButtonElement;
+
     langToggle = document.getElementById('lang-toggle') as HTMLButtonElement;
     aboutModal = document.getElementById('about-modal') as HTMLDivElement;
     btnAbout = document.getElementById('btn-about') as HTMLButtonElement;
@@ -62,6 +73,7 @@ export class UIManager {
         this.initKeyboard();
         this.initPresetSave();
         this.initTutorial();
+        this.initMobileControls();
 
         // Initial UI Update
         this.updateUIText();
@@ -410,20 +422,19 @@ export class UIManager {
         window.addEventListener('keydown', (e) => {
             if (TutorialManager.isTutorialActive()) return;
             if (e.key === 'h' && this.uiLayer) {
-                this.uiLayer.style.opacity = this.uiLayer.style.opacity === '0' ? '1' : '0';
+                this.toggleUIVisibility();
             }
             if (e.key === ' ') {
-                if (this.sketchManager.p5Instance && this.sketchManager.p5Instance.isLooping()) this.sketchManager.p5Instance.noLoop();
-                else if (this.sketchManager.p5Instance) this.sketchManager.p5Instance.loop();
+                this.togglePlayPause();
             }
             if (e.key === 'm' && this.micBtn) {
                 this.micBtn.click();
             }
             if (e.key === 'r' || e.key === 'R') {
-                this.settingsManager.toggleSettings();
+                this.toggleSettingsPanel();
             }
             if (e.key === 'd' || e.key === 'D') {
-                this.audioDebug.toggle();
+                this.toggleDebug();
             }
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
@@ -436,20 +447,10 @@ export class UIManager {
                 this.updateSensitivityUI();
             }
             if (e.key === 'ArrowRight') {
-                if (this.sketchManager.currentSketchIndex === -1) {
-                    this.sketchManager.switchSketch(0, 'canvas-container');
-                } else {
-                    const nextIdx = (this.sketchManager.currentSketchIndex + 1) % this.sketchManager.availableSketches.length;
-                    this.sketchManager.switchSketch(nextIdx, 'canvas-container');
-                }
+                this.sketchManager.goToNextSketch('canvas-container');
             }
             if (e.key === 'ArrowLeft') {
-                if (this.sketchManager.currentSketchIndex === -1) {
-                    this.sketchManager.switchSketch(this.sketchManager.availableSketches.length - 1, 'canvas-container');
-                } else {
-                    const prevIdx = (this.sketchManager.currentSketchIndex - 1 + this.sketchManager.availableSketches.length) % this.sketchManager.availableSketches.length;
-                    this.sketchManager.switchSketch(prevIdx, 'canvas-container');
-                }
+                this.sketchManager.goToPreviousSketch('canvas-container');
             }
             if (this.sketchManager.p5Instance) this.sketchManager.handleKeyPressed(this.sketchManager.p5Instance, e.key);
         });
@@ -478,5 +479,80 @@ export class UIManager {
                 this.tutorialManager?.start();
             };
         }
+    }
+
+    initMobileControls() {
+        const containerId = 'canvas-container';
+
+        if (this.mobilePrevBtn) {
+            this.mobilePrevBtn.onclick = () => {
+                this.sketchManager.goToPreviousSketch(containerId);
+            };
+        }
+
+        if (this.mobileNextBtn) {
+            this.mobileNextBtn.onclick = () => {
+                this.sketchManager.goToNextSketch(containerId);
+            };
+        }
+
+        if (this.mobilePlayPauseBtn) {
+            this.mobilePlayPauseBtn.onclick = () => {
+                this.togglePlayPause();
+            };
+        }
+
+        if (this.mobileToggleUiBtn) {
+            this.mobileToggleUiBtn.onclick = () => {
+                this.toggleUIVisibility();
+            };
+        }
+
+        if (this.mobileConfigBtn) {
+            this.mobileConfigBtn.onclick = () => {
+                this.toggleSettingsPanel();
+            };
+        }
+
+        if (this.mobileDebugBtn) {
+            this.mobileDebugBtn.onclick = () => {
+                this.toggleDebug();
+            };
+        }
+    }
+
+    togglePlayPause() {
+        if (!this.sketchManager.p5Instance) return;
+        const p = this.sketchManager.p5Instance;
+        if (p.isLooping()) {
+            p.noLoop();
+        } else {
+            p.loop();
+        }
+    }
+
+    toggleUIVisibility() {
+        if (!this.uiLayer) return;
+        const isHidden = this.uiLayer.style.opacity === '0';
+        if (isHidden) {
+            // Show UI back
+            this.uiLayer.style.opacity = '1';
+            if (this.uiRestoreBtn) this.uiRestoreBtn.classList.add('hidden');
+        } else {
+            // Hide main UI and reveal a small restore handle
+            this.uiLayer.style.opacity = '0';
+            if (this.uiRestoreBtn) {
+                this.uiRestoreBtn.classList.remove('hidden');
+                this.uiRestoreBtn.onclick = () => this.toggleUIVisibility();
+            }
+        }
+    }
+
+    toggleSettingsPanel() {
+        this.settingsManager.toggleSettings();
+    }
+
+    toggleDebug() {
+        this.audioDebug.toggle();
     }
 }

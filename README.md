@@ -1,6 +1,11 @@
 # PulseAnime – Solution d’art interactif
 
 <div align="center">
+  <!-- Capture d'écran principale (remplacée par ton image) -->
+  <img src="./image/pulseanime-demo-main.png" alt="Capture d'écran de l'écran principal PulseAnime" width="900" />
+</div>
+
+<div align="center">
   <br/>
   <a href="https://vitejs.dev/">
     <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
@@ -31,9 +36,9 @@ Ce projet pluridisciplinaire (Majeure 3TD - Année 2025/2026) vise à :
 * **Analyser le signal** : Découpage spectral précis (FFT 4096), détection de transitoires (attaques) et séparation des bandes de fréquences.
 * **Générer des visuels réactifs** : Utilisation de **p5.js** et **WebGL** pour des rendus haute performance (2D & 3D).
 * **Fonctionnalités avancées** :
-    * Upload d'images/vidéos pour les intégrer aux animations (texture mapping, clipping).
-    * Interface utilisateur (UI) intuitive pour les créateurs (artistes, designers).
-    * Compatibilité Cross-plateformes (PC, Tablette, Smartphone).
+  * Upload d'images/vidéos pour les intégrer aux animations (texture mapping, clipping).
+  * Interface utilisateur (UI) intuitive pour les créateurs (artistes, designers).
+  * Compatibilité Cross-plateformes (PC, Tablette, Smartphone).
 
 ---
 
@@ -41,10 +46,10 @@ Ce projet pluridisciplinaire (Majeure 3TD - Année 2025/2026) vise à :
 
 * **Moteur Audio Pro** : Analyse logarithmique du spectre, Auto-Gain Control (AGC) et détection intelligente des *Beats*.
 * **Bibliothèque de Sketches** :
-    * *Cicatrices d'Or* : Tracés nets sur piano, flux continu sur basses lourdes.
-    * *Jardin Botanique* : Plantes procédurales (L-Systems) qui dansent avec le vent sonore.
-    * *Flux de Particules* : Champs de vecteurs fluides réagissant aux médiums.
-    * *Voyage* : Shader WebGL déformant l'espace-temps selon l'énergie sonore.
+  * *Cicatrices d'Or* : Tracés nets sur piano, flux continu sur basses lourdes.
+  * *Jardin Botanique* : Plantes procédurales (L-Systems) qui dansent avec le vent sonore.
+  * *Flux de Particules* : Champs de vecteurs fluides réagissant aux médiums.
+  * *Voyage* : Shader WebGL déformant l'espace-temps selon l'énergie sonore.
 * **Visualiseur de Spectre** : Affichage temps réel haute précision (64 bandes) avec physique des pics ("Ghost Peaks").
 * **Personnalisation** : Interface de contrôle complète (Couleurs, Vitesse, Sensibilité, Seuils) et système de Presets.
 
@@ -53,6 +58,7 @@ Ce projet pluridisciplinaire (Majeure 3TD - Année 2025/2026) vise à :
 ## 🛠️ Stack Technique
 
 ### Pré-requis Programmation
+
 * **Langage** : TypeScript / JavaScript (Maîtrise du DOM, Canvas API).
 * **Rendu Graphique** : p5.js (Mode P2D & WEBGL).
 * **Traitement Audio** : API Web Audio native (AnalyserNode, GainNode, DynamicsCompressor).
@@ -60,6 +66,7 @@ Ce projet pluridisciplinaire (Majeure 3TD - Année 2025/2026) vise à :
 * **Build Tool** : Vite.
 
 ### Matériel Requis
+
 * Ordinateur ou smartphone avec navigateur compatible Web Audio API (Chrome, Firefox, Safari).
 * Microphone USB (classe-compliant) ou microphone intégré.
 * *(Optionnel)* Tablette graphique ou contrôleur MIDI.
@@ -68,22 +75,24 @@ Ce projet pluridisciplinaire (Majeure 3TD - Année 2025/2026) vise à :
 
 ## 📦 Installation et Lancement
 
-1.  **Cloner le dépôt**
-    ```bash
-    git clone [https://github.com/VOTRE_USERNAME/PulseAnime.git](https://github.com/VOTRE_USERNAME/PulseAnime.git)
-    cd PulseAnime
-    ```
+1. **Cloner le dépôt**
 
-2.  **Installer les dépendances**
-    ```bash
-    npm install
-    ```
+   ```bash
+   git clone [https://github.com/VOTRE_USERNAME/PulseAnime.git](https://github.com/VOTRE_USERNAME/PulseAnime.git)
+   cd PulseAnime
+   ```
+2. **Installer les dépendances**
 
-3.  **Lancer le serveur de développement**
-    ```bash
-    npm run dev
-    ```
-    L'application sera accessible sur `http://localhost:3000` (ou le port indiqué).
+   ```bash
+   npm install
+   ```
+3. **Lancer le serveur de développement**
+
+   ```bash
+   npm run dev
+   ```
+
+   L'application sera accessible sur `http://localhost:3000` (ou le port indiqué).
 
 ---
 
@@ -104,3 +113,4 @@ src/
 ├── types.ts            # Définitions TypeScript partagées
 ├── i18n.ts             # Gestion des langues (FR/EN)
 └── index.tsx           # Point d'entrée principal de l'application
+```

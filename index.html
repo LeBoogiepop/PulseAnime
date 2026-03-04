@@ -132,6 +132,14 @@
       position: static;
       image-rendering: pixelated;
     }
+
+    /* Mobile-specific layout tweaks */
+    @media (max-width: 767px) {
+      /* Allow overlay content to scroll vertically on small screens */
+      #ui-layer {
+        overflow-y: auto;
+      }
+    }
   </style>
   <script type="importmap">
 {
@@ -148,6 +156,12 @@
 
   <!-- CRT Overlay -->
   <div class="scanline absolute inset-0 z-30 opacity-20"></div>
+
+  <!-- Minimal UI Restore Button (shown when UI is hidden) -->
+  <button id="ui-restore"
+    class="fixed top-2 right-2 z-40 px-2 py-1 border border-white/30 bg-black/60 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-white hover:text-black transition-colors hidden">
+    UI
+  </button>
 
   <!-- About Modal -->
   <div id="about-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur hidden">
@@ -201,7 +215,7 @@
 
   <!-- Settings Sidebar (Left) -->
   <div id="settings-panel"
-    class="fixed top-0 left-0 h-full w-80 bg-black/95 backdrop-blur border-r border-white/10 z-40 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-[5px_0_30px_rgba(0,0,0,0.8)]">
+    class="fixed top-0 left-0 h-full w-full max-w-[90vw] lg:w-80 lg:max-w-none bg-black/95 backdrop-blur border-r border-white/10 z-40 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-[5px_0_30px_rgba(0,0,0,0.8)]">
     <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
       <h2 class="text-white font-bold uppercase tracking-widest text-sm" data-i18n="settings_title">CONFIGURATION</h2>
       <button id="close-settings"
@@ -241,7 +255,7 @@
 
   <!-- Main UI Layer -->
   <div id="ui-layer"
-    class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-4 transition-opacity duration-300">
+    class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-2 lg:p-4 transition-opacity duration-300">
 
     <!-- Header -->
     <div class="pointer-events-auto flex justify-between items-start w-full">
@@ -322,13 +336,14 @@
         z-index: 100;
         text-align: left;
         pointer-events: none;
-      ">
+      " class="hidden sm:block">
       <div><strong>PulseAnime</strong> v2.1</div>
       <div>ESME Sudria - Ingénieur 3 (2025/2026)</div>
     </footer>
 
     <!-- Bottom Right Controls -->
-    <div class="pointer-events-auto absolute bottom-4 right-4 w-full max-w-[380px] flex flex-col items-end gap-3">
+    <div
+      class="pointer-events-auto absolute bottom-2 left-0 right-0 w-full px-2 flex flex-col items-stretch gap-3 lg:bottom-4 lg:right-4 lg:left-auto lg:px-0 lg:w-full lg:max-w-[380px] lg:items-end">
 
       <!-- Sketch Selection -->
       <div id="sketch-controls" class="flex flex-wrap gap-1.5 justify-end">
@@ -337,7 +352,7 @@
 
       <!-- Main Control Panel -->
       <div
-        class="bg-black/80 border border-white/10 backdrop-blur-md p-3 w-full flex flex-col gap-3 shadow-2xl rounded-sm">
+        class="bg-black/80 border border-white/10 backdrop-blur-md p-2 sm:p-3 w-full flex flex-col gap-3 shadow-2xl rounded-sm">
 
         <!-- 1. Global Sensitivity Slider (Top) -->
         <div id="sens-container" class="flex flex-col gap-1">
@@ -350,7 +365,7 @@
         </div>
 
         <!-- 2. Mic & Spectrum Viz (Middle) -->
-        <div class="flex items-center gap-2 w-full h-6">
+        <div class="flex items-center gap-2 w-full h-8">
           <button id="mic-btn"
             class="h-full px-3 bg-white/5 text-white border border-white/10 hover:bg-white hover:text-black transition-all uppercase text-[9px] font-bold tracking-widest whitespace-nowrap flex items-center justify-center shrink-0"
             data-i18n="mic_off">
@@ -362,11 +377,40 @@
         </div>
 
         <!-- 3. Shortcuts Display (Bottom) -->
-        <div id="shortcuts-area" class="flex justify-between items-center border-t border-white/5 pt-2 mt-1">
-          <div class="text-[9px] text-gray-500 font-mono uppercase tracking-tight" data-i18n="shortcuts">
+        <div id="shortcuts-area"
+          class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center border-t border-white/5 pt-2 mt-1">
+          <div class="text-[9px] text-gray-500 font-mono uppercase tracking-tight sm:max-w-[60%]"
+            data-i18n="shortcuts">
             [←/→] NAVIGATE • [SPACE] PAUSE • [H] UI • [R] CONFIG • [D] DEBUG
           </div>
-          <div class="text-[9px] text-gray-600 font-mono" id="fps-counter">60 FPS</div>
+          <div class="text-[9px] text-gray-600 font-mono order-3 sm:order-none" id="fps-counter">60 FPS</div>
+          <!-- Mobile Action Menu -->
+          <div class="flex flex-wrap gap-1 justify-start sm:justify-end lg:hidden">
+            <button id="mobile-prev"
+              class="px-2 py-1 min-w-[44px] h-8 border border-white/20 bg-black/60 text-white text-[10px] font-mono uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+              ◀
+            </button>
+            <button id="mobile-next"
+              class="px-2 py-1 min-w-[44px] h-8 border border-white/20 bg-black/60 text-white text-[10px] font-mono uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+              ▶
+            </button>
+            <button id="mobile-play-pause"
+              class="px-2 py-1 min-w-[64px] h-8 border border-white/20 bg-white text-black text-[10px] font-mono uppercase tracking-tight hover:bg-gray-200 transition-colors">
+              PLAY
+            </button>
+            <button id="mobile-toggle-ui"
+              class="px-2 py-1 min-w-[64px] h-8 border border-white/20 bg-black/60 text-white text-[10px] font-mono uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+              UI
+            </button>
+            <button id="mobile-config"
+              class="px-2 py-1 min-w-[64px] h-8 border border-white/20 bg-black/60 text-white text-[10px] font-mono uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+              CONFIG
+            </button>
+            <button id="mobile-debug"
+              class="px-2 py-1 min-w-[64px] h-8 border border-white/20 bg-black/60 text-white text-[10px] font-mono uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+              DEBUG
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -22,6 +22,7 @@ export class TutorialManager {
     private debugMode = false;
     private debugPanel: HTMLDivElement | null = null;
     private lastStepForDebugSync = -1;
+    private shouldClampTooltip = false;
 
     private steps: TutorialStep[] = [
         {
@@ -356,6 +357,7 @@ export class TutorialManager {
         if (step.targetId === 'audio-upload' && target?.parentElement) actualTarget = target.parentElement;
 
         if (actualTarget) {
+            this.shouldClampTooltip = true;
             const rect = actualTarget.getBoundingClientRect();
 
             // Highlight
@@ -459,6 +461,7 @@ export class TutorialManager {
             const y2 = y1 + rect.height + hH + 4;
             this.overlay!.style.clipPath = `polygon(0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%, ${x1}px ${y1}px, ${x2}px ${y1}px, ${x2}px ${y2}px, ${x1}px ${y2}px, ${x1}px ${y1}px)`;
         } else {
+            this.shouldClampTooltip = false;
             this.highlight.style.opacity = '0';
             this.overlay!.style.clipPath = 'none';
             this.tooltip.style.left = '50%';
@@ -470,7 +473,7 @@ export class TutorialManager {
     }
 
     private clampTooltip() {
-        if (!this.tooltip) return;
+        if (!this.tooltip || !this.shouldClampTooltip) return;
         const rect = this.tooltip.getBoundingClientRect();
         const m = 20;
         if (rect.left < m) this.tooltip.style.left = `${m}px`;
