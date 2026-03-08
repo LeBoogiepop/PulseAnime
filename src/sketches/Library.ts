@@ -1,9 +1,7 @@
 
 import p5 from 'p5';
-import { Sketch, AudioData, PALETTES, SketchParams } from '../types';
+import { Sketch, AudioData, SketchParams } from '../types';
 import { t } from '../i18n';
-
-const getPalette = (idx: number) => PALETTES[idx % PALETTES.length];
 
 export const drawBackground = (p: p5, bgImage?: p5.Image | null, opacity: number = 20) => {
   if (bgImage) {
@@ -191,8 +189,9 @@ export class NoiseField implements Sketch {
 export class LandingPage implements Sketch {
   id = 'landing';
   name = 'Accueil';
-  // WEBGL active la 3D
   mode = 'WEBGL' as const;
+  /** Si true, n'affiche pas le texte (pour fond page lib) */
+  static hideText = false;
   audioReactivity = 'La sphère centrale pulse en rythme avec les basses fréquences.';
 
   params: SketchParams = {
@@ -264,42 +263,35 @@ export class LandingPage implements Sketch {
     p.sphere(r, det, Math.floor(det * 0.66));
     p.pop();
 
-    // --- TEXTE FLOTTANT ---
-    p.push();
-    p.fill(255);
-    p.noStroke();
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(16);
+    // --- TEXTE FLOTTANT (sauf en mode fond lib) ---
+    if (!LandingPage.hideText) {
+      p.push();
+      p.fill(255);
+      p.noStroke();
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(16);
 
-    // 3. Mouvement de vague (Math.sin)
-    // Le texte monte et descend doucement
-    const yOff = Math.sin(p.frameCount * 0.05) * 5;
+      const yOff = Math.sin(p.frameCount * 0.05) * 5;
 
-    if (isMobile) {
-      // Sur mobile, place le titre au-dessus de la sphère (légèrement plus haut)
-      p.translate(0, -230 + yOff, 0);
-    } else {
-      // Desktop : sous la sphère comme avant
-      p.translate(0, 180 + yOff, 0);
-    }
-
-    // Update Text Layer (in case of language change)
-    if (this.textLayer) {
-      this.textLayer.clear();
-      this.textLayer.fill(255);
-      this.textLayer.noStroke();
-      this.textLayer.text(t('landing_cta'), this.textLayer.width / 2, this.textLayer.height / 2);
-
-      // Draw the text layer as a texture/image
-      p.imageMode(p.CENTER);
       if (isMobile) {
-        // Réduit légèrement la taille perçue du texte sur mobile
-        p.scale(0.8);
+        p.translate(0, -230 + yOff, 0);
+      } else {
+        p.translate(0, 180 + yOff, 0);
       }
-      p.image(this.textLayer, 0, 0);
-    }
 
-    p.pop();
+      if (this.textLayer) {
+        this.textLayer.clear();
+        this.textLayer.fill(255);
+        this.textLayer.noStroke();
+        this.textLayer.text(t('landing_cta'), this.textLayer.width / 2, this.textLayer.height / 2);
+
+        p.imageMode(p.CENTER);
+        if (isMobile) p.scale(0.8);
+        p.image(this.textLayer, 0, 0);
+      }
+
+      p.pop();
+    }
   }
 
   cleanup() { }

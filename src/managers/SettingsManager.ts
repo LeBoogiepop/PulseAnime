@@ -1,7 +1,8 @@
-import p5 from 'p5';
 import { t } from '../i18n';
 import { SketchManager } from './SketchManager';
 import { createDotMatrixSlider } from '../utils/uiUtils';
+import { getCurrentUser } from '../services/auth';
+import { fetchUserPresets, saveUserPreset, deleteUserPreset } from '../services/userPresets';
 
 export class SettingsManager {
     sketchManager: SketchManager;
@@ -319,72 +320,124 @@ export class SettingsManager {
         });
     }
 
-    loadPresetsList() {
+    private applyPresetData(data: Record<string, unknown>) {
+        const currentSketch = this.sketchManager.currentSketch;
+        const params = data.params as Record<string, unknown> | undefined;
+        const flat = params ?? data;
+        if (currentSketch.params) {
+            Object.keys(flat).forEach(k => {
+                if (currentSketch.params![k]) currentSketch.params![k].value = flat[k];
+            });
+        }
+        const global = data.global as Record<string, unknown> | undefined;
+        if (global && this.sketchManager.postProcessing?.params) {
+            Object.keys(global).forEach(k => {
+                if (this.sketchManager.postProcessing.params[k]) {
+                    this.sketchManager.postProcessing.params[k].value = global[k];
+                }
+            });
+        }
+        this.generateSettingsUI();
+        if (this.sketchManager.p5Instance) currentSketch.setup(this.sketchManager.p5Instance);
+    }
+
+    private buildPresetData(): Record<string, unknown> {
+        const currentSketch = this.sketchManager.currentSketch;
+        const params: Record<string, unknown> = {};
+        if (currentSketch.params) {
+            Object.keys(currentSketch.params).forEach(k => {
+                params[k] = currentSketch.params![k].value;
+            });
+        }
+        const global: Record<string, unknown> = {};
+        if (this.sketchManager.postProcessing?.params) {
+            Object.keys(this.sketchManager.postProcessing.params).forEach(k => {
+                global[k] = this.sketchManager.postProcessing.params[k].value;
+            });
+        }
+        return { params, global };
+    }
+
+    async loadPresetsList() {
         if (!this.presetsList) return;
         this.presetsList.innerHTML = '';
         const currentSketch = this.sketchManager.currentSketch;
         const prefix = `pulseanime_preset_${currentSketch.id}_`;
 
+        const user = await getCurrentUser();
+        const cloudPresets = user ? await fetchUserPresets(currentSketch.id) : [];
+
+        const renderItem = (name: string, data: Record<string, unknown>, source: 'cloud' | 'local', id?: string, storageKey?: string) => {
+            const item = document.createElement('div');
+            item.className = 'flex justify-between items-center bg-white/5 p-3 border border-white/10 hover:border-white/30 transition-colors group';
+
+            const label = document.createElement('span');
+            label.className = 'text-[10px] text-gray-300 font-mono uppercase tracking-wide flex items-center gap-2';
+            label.innerHTML = source === 'cloud' ? `${name} <span class="text-[8px] text-cyan-500">☁</span>` : name;
+
+            const actions = document.createElement('div');
+            actions.className = 'flex gap-3';
+
+            const loadBtn = document.createElement('button');
+            loadBtn.innerText = t('btn_load');
+            loadBtn.className = 'text-[9px] text-white font-bold opacity-50 group-hover:opacity-100 transition-opacity hover:underline';
+            loadBtn.onclick = () => {
+                try {
+                    this.applyPresetData(data);
+                } catch (e) { console.error(e); }
+            };
+
+            const delBtn = document.createElement('button');
+            delBtn.innerText = t('btn_del');
+            delBtn.className = 'text-[9px] text-red-500 hover:text-red-300 font-bold opacity-50 group-hover:opacity-100 transition-opacity';
+            delBtn.onclick = async () => {
+                if (source === 'cloud' && id) {
+                    await deleteUserPreset(id);
+                } else if (storageKey) {
+                    localStorage.removeItem(storageKey);
+                }
+                this.loadPresetsList();
+            };
+
+            actions.appendChild(loadBtn);
+            actions.appendChild(delBtn);
+            item.appendChild(label);
+            item.appendChild(actions);
+            this.presetsList!.appendChild(item);
+        };
+
+        cloudPresets.forEach(p => renderItem(p.name, p.data as Record<string, unknown>, 'cloud', p.id));
+
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith(prefix)) {
                 const name = key.replace(prefix, '');
-
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center bg-white/5 p-3 border border-white/10 hover:border-white/30 transition-colors group';
-
-                const label = document.createElement('span');
-                label.innerText = name;
-                label.className = 'text-[10px] text-gray-300 font-mono uppercase tracking-wide';
-
-                const actions = document.createElement('div');
-                actions.className = 'flex gap-3';
-
-                const loadBtn = document.createElement('button');
-                loadBtn.innerText = t('btn_load');
-                loadBtn.className = 'text-[9px] text-white font-bold opacity-50 group-hover:opacity-100 transition-opacity hover:underline';
-                loadBtn.onclick = () => {
-                    try {
-                        const saved = JSON.parse(localStorage.getItem(key)!);
-                        if (currentSketch.params) {
-                            Object.keys(saved).forEach(k => {
-                                if (currentSketch.params![k]) currentSketch.params![k].value = saved[k];
-                            });
-                            this.generateSettingsUI();
-                            if (this.sketchManager.p5Instance) currentSketch.setup(this.sketchManager.p5Instance);
-                        }
-                    } catch (e) { console.error(e); }
-                };
-
-                const delBtn = document.createElement('button');
-                delBtn.innerText = t('btn_del');
-                delBtn.className = 'text-[9px] text-red-500 hover:text-red-300 font-bold opacity-50 group-hover:opacity-100 transition-opacity';
-                delBtn.onclick = () => {
-                    localStorage.removeItem(key);
-                    this.loadPresetsList();
-                };
-
-                actions.appendChild(loadBtn);
-                actions.appendChild(delBtn);
-                item.appendChild(label);
-                item.appendChild(actions);
-                this.presetsList.appendChild(item);
+                try {
+                    const data = JSON.parse(localStorage.getItem(key)!) as Record<string, unknown>;
+                    renderItem(name, data, 'local', undefined, key);
+                } catch (_) {}
             }
         }
     }
 
-    savePreset() {
+    async savePreset() {
         if (!this.presetNameInput) return;
         const name = this.presetNameInput.value.trim();
         const currentSketch = this.sketchManager.currentSketch;
         if (!name || !currentSketch.params) return;
 
-        const data: any = {};
-        Object.keys(currentSketch.params).forEach(k => {
-            data[k] = currentSketch.params![k].value;
-        });
+        const data = this.buildPresetData();
+        const user = await getCurrentUser();
 
-        localStorage.setItem(`pulseanime_preset_${currentSketch.id}_${name}`, JSON.stringify(data));
+        if (user) {
+            const { error } = await saveUserPreset(currentSketch.id, name, data);
+            if (error) {
+                alert(t('preset_save_error') || error.message);
+                return;
+            }
+        } else {
+            localStorage.setItem(`pulseanime_preset_${currentSketch.id}_${name}`, JSON.stringify(data));
+        }
         this.presetNameInput.value = '';
         this.loadPresetsList();
     }

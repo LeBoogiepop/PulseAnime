@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library - PulseAnime</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0a;
+      overflow-x: hidden;
+      overflow-y: auto;
+      user-select: none;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .scene-card:hover { border-color: rgba(255,255,255,0.4); }
+    #lib-canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
+  </style>
+</head>
+<body class="min-h-screen text-gray-200">
+  <!-- Fond 3D : sketch Landing (sphère) comme sur la page principale -->
+  <div id="lib-canvas-container" class="fixed inset-0 z-0 pointer-events-none"></div>
+
+  <!-- Auth gate : affiché si non connecté -->
+  <div id="lib-auth-gate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur">
+    <div class="text-center max-w-md px-6">
+      <h2 class="text-2xl font-bold text-white uppercase tracking-widest mb-4" data-i18n="lib_auth_title">Library</h2>
+      <p class="text-gray-400 text-sm font-mono mb-8" data-i18n="lib_auth_desc">Sign in to access the scene library.</p>
+      <div id="lib-auth-form" class="bg-black/80 border border-white/20 p-6 text-left">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-1" data-i18n="lib_email">Email</label>
+            <input type="email" id="lib-auth-email" placeholder="you@example.com" data-i18n-placeholder="lib_placeholder_email"
+              class="w-full bg-black border border-white/20 text-white text-sm p-2 outline-none focus:border-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-1" data-i18n="lib_password">Password</label>
+            <input type="password" id="lib-auth-password" placeholder="••••••••"
+              class="w-full bg-black border border-white/20 text-white text-sm p-2 outline-none focus:border-white font-mono">
+          </div>
+          <div id="lib-auth-message" class="text-xs hidden"></div>
+          <button id="lib-auth-submit" class="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-gray-200" data-i18n="lib_signin">Sign In</button>
+          <a href="/" class="block text-center text-gray-500 text-xs hover:text-white" data-i18n="lib_back_home">← Back to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu principal : scroll (fond semi-transparent pour lisibilité sur le sketch 3D) -->
+  <main id="lib-content" class="absolute inset-0 z-10 overflow-y-auto hidden bg-black/40 backdrop-blur-sm">
+    <!-- Header : même structure et padding que la page principale -->
+    <div class="p-2 lg:p-4 flex justify-between items-start w-full">
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="lib-user-email" class="hidden text-[10px] font-mono text-gray-400 truncate max-w-[180px]" title=""></span>
+          <a href="/" class="px-3 py-1 border border-white/20 text-gray-400 text-xs font-mono uppercase hover:bg-white/10 hover:text-white transition-colors bg-black/50 backdrop-blur" data-i18n="lib_back">← Back</a>
+        </div>
+        <h1 class="text-2xl font-bold text-white tracking-widest uppercase">
+          PULSE<span class="text-gray-400">ANIME</span>
+        </h1>
+        <div class="text-[9px] text-gray-500 mt-1 tracking-[0.2em] uppercase" data-i18n="lib_title">Library</div>
+      </div>
+      <button id="lib-lang-toggle"
+        class="w-8 h-8 flex items-center justify-center border border-white/20 text-white font-mono text-xs hover:bg-white hover:text-black transition-colors bg-black/50 backdrop-blur">
+        FR
+      </button>
+    </div>
+
+    <div class="w-full max-w-7xl mx-auto px-4 lg:px-8 pb-12">
+      <div class="border-l-2 border-white/20 pl-6 mb-8">
+        <h2 class="text-4xl md:text-5xl font-bold tracking-tighter text-white uppercase mb-4" data-i18n="lib_hero_title">Sketch Library</h2>
+        <p class="text-xs text-gray-500 font-mono uppercase tracking-widest" data-i18n="lib_hero_desc">Audio-reactive scenes. Data from Supabase.</p>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap gap-2 mb-6">
+        <button data-filter="all" class="lib-filter px-3 py-1 text-[10px] font-mono uppercase border border-white bg-white text-black" data-i18n="lib_filter_all">All</button>
+        <button data-filter="2D" class="lib-filter px-3 py-1 text-[10px] font-mono uppercase border border-white/20 text-gray-400 hover:text-white" data-i18n="lib_filter_2d">2D</button>
+        <button data-filter="3D" class="lib-filter px-3 py-1 text-[10px] font-mono uppercase border border-white/20 text-gray-400 hover:text-white" data-i18n="lib_filter_3d">3D</button>
+        <button data-filter="Shader" class="lib-filter px-3 py-1 text-[10px] font-mono uppercase border border-white/20 text-gray-400 hover:text-white" data-i18n="lib_filter_shader">Shader</button>
+      </div>
+
+      <!-- Grid -->
+      <div id="lib-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Cards injected by lib.ts -->
+      </div>
+
+      <div id="lib-empty" class="hidden text-center py-20 border border-white/10 text-gray-500 text-sm font-mono uppercase" data-i18n="lib_empty">
+        No scenes found.
+      </div>
+    </div>
+  </main>
+
+  <!-- Zone de visualisation (iframe) -->
+  <div id="lib-preview-overlay" class="fixed inset-0 z-[100] bg-black hidden flex-col">
+    <div class="flex justify-between items-center p-2 border-b border-white/10 bg-black/90">
+      <span id="lib-preview-title" class="text-sm font-mono uppercase text-white"></span>
+      <button id="lib-preview-close" class="px-3 py-1 border border-white/20 text-white text-xs font-mono uppercase hover:bg-white hover:text-black" data-i18n="lib_close">Close</button>
+    </div>
+    <iframe id="lib-preview-iframe" class="flex-1 w-full border-0" allow="microphone" title="Preview"></iframe>
+  </div>
+
+  <script type="module" src="/src/pages/lib.ts"></script>
+</body>
+</html>

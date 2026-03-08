@@ -5,6 +5,7 @@ import { SettingsManager } from './SettingsManager';
 import { createDotMatrixSlider } from '../utils/uiUtils';
 import { TutorialManager } from './TutorialManager';
 import { AudioDebug } from '../components/AudioDebug';
+import { initAuth, onAuthStateChange, signIn, signUp, signOut, isConfigured } from '../services/auth';
 
 export class UIManager {
     sketchManager: SketchManager;
@@ -43,6 +44,18 @@ export class UIManager {
     // UI restore handle
     uiRestoreBtn = document.getElementById('ui-restore') as HTMLButtonElement;
 
+    libBtn = document.getElementById('lib-btn') as HTMLAnchorElement;
+    loginBtn = document.getElementById('login-btn') as HTMLButtonElement;
+    authModal = document.getElementById('auth-modal') as HTMLDivElement;
+    closeAuthBtn = document.getElementById('close-auth') as HTMLButtonElement;
+    authEmailInput = document.getElementById('auth-email') as HTMLInputElement;
+    authPasswordInput = document.getElementById('auth-password') as HTMLInputElement;
+    authPasswordConfirmInput = document.getElementById('auth-password-confirm') as HTMLInputElement;
+    authConfirmPasswordContainer = document.getElementById('auth-confirm-password-container') as HTMLDivElement;
+    authSubmitBtn = document.getElementById('auth-submit') as HTMLButtonElement;
+    authSwitchModeBtn = document.getElementById('auth-switch-mode') as HTMLButtonElement;
+    authMessage = document.getElementById('auth-message') as HTMLDivElement;
+    authUserEmail = document.getElementById('auth-user-email') as HTMLSpanElement;
     langToggle = document.getElementById('lang-toggle') as HTMLButtonElement;
     aboutModal = document.getElementById('about-modal') as HTMLDivElement;
     btnAbout = document.getElementById('btn-about') as HTMLButtonElement;
@@ -74,6 +87,8 @@ export class UIManager {
         this.initPresetSave();
         this.initTutorial();
         this.initMobileControls();
+        this.initLogin();
+        this.initLibButton();
 
         // Initial UI Update
         this.updateUIText();
@@ -210,6 +225,18 @@ export class UIManager {
 
         // Update Lang Button
         if (this.langToggle) this.langToggle.innerText = getLang() === 'en' ? 'FR' : 'EN';
+
+        // Update Login Button & Auth User Email (respect auth state)
+        if (this.loginBtn) {
+            this.loginBtn.innerText = this.currentUser ? t('btn_logout') : t('btn_login');
+        }
+        if (this.authUserEmail && this.currentUser?.email) {
+            this.authUserEmail.textContent = this.truncateEmail(this.currentUser.email);
+            this.authUserEmail.title = this.currentUser.email;
+            this.authUserEmail.classList.remove('hidden');
+        } else if (this.authUserEmail) {
+            this.authUserEmail.classList.add('hidden');
+        }
 
         // Update Dynamic Sketch Buttons
         if (this.controlsContainer) {
@@ -374,6 +401,169 @@ export class UIManager {
         }
     }
 
+    private authIsSignUp = false;
+    private authUnsubscribe: (() => void) | null = null;
+    private currentUser: { email?: string } | null = null;
+
+    initLogin() {
+        initAuth();
+
+        this.authUnsubscribe = onAuthStateChange(({ user }) => {
+            this.currentUser = user;
+            this.updateLoginButton(user);
+        });
+
+        if (this.loginBtn) {
+            this.loginBtn.onclick = () => {
+                if (this.loginBtn?.dataset.authenticated === 'true') {
+                    signOut();
+                } else {
+                    this.openAuthModal();
+                }
+            };
+        }
+
+        if (this.closeAuthBtn && this.authModal) {
+            this.closeAuthBtn.onclick = () => this.closeAuthModal();
+        }
+
+        if (this.authSubmitBtn && this.authEmailInput && this.authPasswordInput) {
+            this.authSubmitBtn.onclick = () => this.handleAuthSubmit();
+        }
+
+        if (this.authSwitchModeBtn) {
+            this.authSwitchModeBtn.onclick = () => {
+                this.authIsSignUp = !this.authIsSignUp;
+                this.authSubmitBtn.innerText = t(this.authIsSignUp ? 'auth_signup' : 'auth_signin');
+                this.authSwitchModeBtn.innerText = t(this.authIsSignUp ? 'auth_switch_signin' : 'auth_switch_signup');
+                this.toggleConfirmPasswordField(this.authIsSignUp);
+                this.showAuthMessage('');
+            };
+        }
+    }
+
+    initLibButton() {
+        if (this.libBtn) {
+            this.libBtn.href = '/lib.html';
+        }
+    }
+
+    private toggleConfirmPasswordField(show: boolean) {
+        if (this.authConfirmPasswordContainer) {
+            this.authConfirmPasswordContainer.classList.toggle('hidden', !show);
+            if (this.authPasswordConfirmInput) {
+                this.authPasswordConfirmInput.required = show;
+                this.authPasswordConfirmInput.value = '';
+            }
+        }
+    }
+
+    private truncateEmail(email: string, maxLen = 24): string {
+        if (email.length <= maxLen) return email;
+        return email.slice(0, maxLen - 3) + '...';
+    }
+
+    private updateLoginButton(user: { email?: string } | null) {
+        if (!this.loginBtn) return;
+        if (user?.email && this.authUserEmail) {
+            this.authUserEmail.textContent = this.truncateEmail(user.email);
+            this.authUserEmail.title = user.email;
+            this.authUserEmail.classList.remove('hidden');
+            this.loginBtn.innerText = t('btn_logout');
+            this.loginBtn.dataset.authenticated = 'true';
+        } else {
+            if (this.authUserEmail) {
+                this.authUserEmail.textContent = '';
+                this.authUserEmail.classList.add('hidden');
+            }
+            this.loginBtn.innerText = t('btn_login');
+            this.loginBtn.dataset.authenticated = 'false';
+        }
+    }
+
+    private openAuthModal() {
+        if (!this.authModal || !isConfigured()) {
+            alert('Supabase non configuré. Crée un fichier .env avec VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY');
+            return;
+        }
+        this.authIsSignUp = false;
+        this.authSubmitBtn.innerText = t('auth_signin');
+        this.authSwitchModeBtn.innerText = t('auth_switch_signup');
+        this.toggleConfirmPasswordField(false);
+        if (this.authEmailInput) this.authEmailInput.value = '';
+        if (this.authPasswordInput) this.authPasswordInput.value = '';
+        if (this.authPasswordConfirmInput) this.authPasswordConfirmInput.value = '';
+        this.showAuthMessage('');
+        this.authModal.classList.remove('hidden');
+        this.authModal.classList.add('flex');
+    }
+
+    private closeAuthModal() {
+        this.authModal?.classList.add('hidden');
+        this.authModal?.classList.remove('flex');
+    }
+
+    private showAuthMessage(msg: string, isError = false) {
+        if (!this.authMessage) return;
+        this.authMessage.textContent = msg;
+        this.authMessage.classList.toggle('hidden', !msg);
+        this.authMessage.classList.toggle('text-green-500', msg && !isError);
+        this.authMessage.classList.toggle('text-red-500', isError);
+    }
+
+    private isValidEmail(email: string): boolean {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    private async handleAuthSubmit() {
+        const email = this.authEmailInput?.value?.trim();
+        const password = this.authPasswordInput?.value;
+        const passwordConfirm = this.authPasswordConfirmInput?.value;
+
+        if (!email || !password) {
+            this.showAuthMessage(t('auth_error'), true);
+            return;
+        }
+
+        if (!this.isValidEmail(email)) {
+            this.showAuthMessage(t('auth_email_invalid'), true);
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showAuthMessage(t('auth_password_too_short'), true);
+            return;
+        }
+
+        if (this.authIsSignUp) {
+            if (password !== passwordConfirm) {
+                this.showAuthMessage(t('auth_password_mismatch'), true);
+                return;
+            }
+        }
+
+        this.authSubmitBtn.disabled = true;
+        this.showAuthMessage('');
+
+        const { error } = this.authIsSignUp
+            ? await signUp(email, password)
+            : await signIn(email, password);
+
+        this.authSubmitBtn.disabled = false;
+
+        if (error) {
+            this.showAuthMessage(error.message || t('auth_error'), true);
+            return;
+        }
+
+        if (this.authIsSignUp) {
+            this.showAuthMessage(t('auth_success'));
+        } else {
+            this.closeAuthModal();
+        }
+    }
+
     initModal() {
         if (this.btnAbout && this.aboutModal && this.closeAbout) {
             this.btnAbout.onclick = () => {
@@ -421,6 +611,9 @@ export class UIManager {
     initKeyboard() {
         window.addEventListener('keydown', (e) => {
             if (TutorialManager.isTutorialActive()) return;
+            const active = document.activeElement as HTMLElement | null;
+            const isInputFocused = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || !!active.isContentEditable);
+            if (isInputFocused) return;
             if (e.key === 'h' && this.uiLayer) {
                 this.toggleUIVisibility();
             }

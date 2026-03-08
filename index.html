@@ -166,6 +166,39 @@
     UI
   </button>
 
+  <!-- Auth Modal (Login / Signup) -->
+  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur hidden">
+    <div class="bg-[#0a0a0a] border border-white/20 p-8 max-w-sm w-full m-4 shadow-2xl text-gray-300 relative">
+      <button id="close-auth" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+      <h2 class="text-xl font-bold text-white mb-6 tracking-tighter" data-i18n="auth_title">Account</h2>
+
+      <!-- Auth Form -->
+      <div id="auth-signin-form" class="space-y-4">
+        <div>
+          <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-1" data-i18n="auth_email">Email</label>
+          <input type="email" id="auth-email" placeholder="you@example.com" required
+            class="w-full bg-black border border-white/20 text-white text-sm p-2 outline-none focus:border-white font-mono"
+            autocomplete="email">
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-1" data-i18n="auth_password">Password</label>
+          <input type="password" id="auth-password" placeholder="••••••••" required minlength="6"
+            class="w-full bg-black border border-white/20 text-white text-sm p-2 outline-none focus:border-white font-mono"
+            autocomplete="current-password">
+        </div>
+        <div id="auth-confirm-password-container" class="hidden">
+          <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-1" data-i18n="auth_confirm_password">Confirm password</label>
+          <input type="password" id="auth-password-confirm" placeholder="••••••••" minlength="6"
+            class="w-full bg-black border border-white/20 text-white text-sm p-2 outline-none focus:border-white font-mono"
+            autocomplete="new-password">
+        </div>
+        <div id="auth-message" class="text-xs hidden"></div>
+        <button id="auth-submit" class="w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors" data-i18n="auth_signin">Sign In</button>
+        <button id="auth-switch-mode" class="w-full py-2 text-gray-500 text-xs hover:text-white transition-colors" data-i18n="auth_switch_signup">Create an account</button>
+      </div>
+    </div>
+  </div>
+
   <!-- About Modal -->
   <div id="about-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur hidden">
     <div class="bg-[#0a0a0a] border border-white/20 p-8 max-w-2xl w-full m-4 shadow-2xl text-gray-300 relative">
@@ -262,7 +295,18 @@
 
     <!-- Header -->
     <div class="pointer-events-auto flex justify-between items-start w-full">
-      <div>
+      <div class="flex flex-col gap-2">
+        <div id="auth-user-area" class="flex flex-wrap items-center gap-2">
+          <span id="auth-user-email" class="hidden text-[10px] font-mono text-gray-400 truncate max-w-[180px]" title=""></span>
+          <a id="lib-btn" href="/lib.html"
+            class="px-3 py-1 border border-white/20 text-gray-400 text-xs font-mono uppercase hover:bg-white/10 hover:text-white transition-colors bg-black/50 backdrop-blur"
+            data-i18n="btn_lib">LIB</a>
+          <button id="login-btn"
+            class="px-3 py-1 border border-white/20 text-gray-400 text-xs font-mono uppercase hover:bg-white/10 hover:text-white transition-colors bg-black/50 backdrop-blur"
+            data-i18n="btn_login">
+            LOGIN
+          </button>
+        </div>
         <h1 class="text-2xl font-bold text-white tracking-widest uppercase">
           PULSE<span class="text-gray-400">ANIME</span>
         </h1>

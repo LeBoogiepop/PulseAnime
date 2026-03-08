@@ -1,20 +1,11 @@
 import p5 from 'p5';
 import { Sketch, AudioData } from '../types';
-import {
-    FlowTrails,
-    PlexusVoronoi,
-    NoiseField,
-    TravelShader,
-    LandingPage,
-    NoisePartition,
-    Botanical,
-    GoldenScars,
-    ColorShift,
-    BotanicalPond,
-    BoxTunnel
-} from '../sketches/index';
-
+import { LandingPage } from '../sketches/Library';
+import { SKETCH_REGISTRY } from '../sketches/registry';
 import { PostProcessingManager } from './PostProcessingManager';
+
+/** Image de fond par défaut pour la scène Nénuphar (locale) */
+const WATER_LILY_BG_URL = '/image/water-lily.png';
 
 export class SketchManager {
     availableSketches: Sketch[];
@@ -24,25 +15,37 @@ export class SketchManager {
     p5Instance: p5 | null = null;
     currentRendererMode: 'P2D' | 'WEBGL' = 'WEBGL';
     uploadedBgImage: p5.Image | null = null;
+    /** Image de fond par défaut pour water_lily (chargée à la demande) */
+    private waterLilyDefaultBg: p5.Image | null = null;
+    private waterLilyBgLoading = false;
 
     postProcessing: PostProcessingManager;
 
-    // Callback for when sketch changes (to update UI)
     onSketchChange?: (sketch: Sketch, index: number) => void;
 
-    constructor() {
+    constructor(sketchOrder?: string[]) {
         this.landingSketch = new LandingPage();
-        this.availableSketches = [
-            new BotanicalPond(),
-            new ColorShift(),
-            new GoldenScars(),
-            new NoisePartition(),
-            new TravelShader(),
-            new PlexusVoronoi(),
-            new BoxTunnel()
-        ];
+        this.availableSketches = this.buildSketchList(sketchOrder);
         this.currentSketch = this.landingSketch;
         this.postProcessing = new PostProcessingManager();
+    }
+
+    private buildSketchList(order?: string[]): Sketch[] {
+        const byId = new Map<string, Sketch>();
+        for (const C of SKETCH_REGISTRY) {
+            const s = new C();
+            byId.set(s.id, s);
+        }
+        if (order && order.length > 0) {
+            const result: Sketch[] = [];
+            for (const id of order) {
+                const s = byId.get(id);
+                if (s) result.push(s);
+            }
+            if (result.length > 0) return result;
+        }
+        // Par défaut : toutes les scènes du registre
+        return SKETCH_REGISTRY.map(C => new C());
     }
 
     setup(p: p5) {
@@ -55,8 +58,23 @@ export class SketchManager {
     }
 
     draw(p: p5, audio: AudioData) {
+        // Charger l'image de fond par défaut pour water_lily si nécessaire
+        let bgImage = this.uploadedBgImage;
+        if (this.currentSketch.id === 'water_lily' && !bgImage) {
+            if (this.waterLilyDefaultBg) {
+                bgImage = this.waterLilyDefaultBg;
+            } else if (!this.waterLilyBgLoading) {
+                this.waterLilyBgLoading = true;
+                p.loadImage(WATER_LILY_BG_URL, (img) => {
+                    this.waterLilyDefaultBg = img;
+                }, () => {
+                    this.waterLilyBgLoading = false;
+                });
+            }
+        }
+
         p.push();
-        this.currentSketch.draw(p, audio, this.uploadedBgImage);
+        this.currentSketch.draw(p, audio, bgImage);
         p.pop();
 
         // Apply Global Effects
@@ -64,7 +82,7 @@ export class SketchManager {
     }
 
     switchSketch(idx: number, containerId: string) {
-        // Clear background image on every switch to avoid confusion
+        // Clear user-uploaded background on switch (water_lily garde son image par défaut)
         this.uploadedBgImage = null;
 
         // Logic: If clicking the currently active sketch, toggle back to Landing (-1)
@@ -95,21 +113,8 @@ export class SketchManager {
             }
             this.currentRendererMode = nextRendererMode;
             const container = document.getElementById(containerId);
-            if (container) {
-                // We need to re-instantiate p5. 
-                // Note: This is tricky because the main sketch function in index.tsx wraps this.
-                // We might need to reload the page or handle this differently.
-                // Ideally, index.tsx should handle the p5 creation, but we want to move logic here.
-                // Let's assume index.tsx will call a method to re-init if needed, 
-                // OR we pass a callback to recreate p5.
-                // For now, let's just update the mode and let the caller handle re-creation if possible,
-                // but actually the p5 instance is created with a specific mode.
-                // We can't change mode of existing canvas easily without remove/create.
-
-                // We will trigger a callback to request p5 recreation
-                if (this.onRequestP5Recreation) {
-                    this.onRequestP5Recreation();
-                }
+            if (container && this.onRequestP5Recreation) {
+                this.onRequestP5Recreation();
             }
         } else {
             if (this.currentSketch.cleanup) this.currentSketch.cleanup();
@@ -132,7 +137,6 @@ export class SketchManager {
         }
     }
 
-    // Callback placeholder
     onRequestP5Recreation?: () => void;
 
     handleResize(p: p5) {

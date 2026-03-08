@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.local
+
+# Dossier source images (doublon de public/image/)
+image/
 
 # Editor directories and files
 .vscode/*
